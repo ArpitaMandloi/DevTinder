@@ -1,17 +1,27 @@
 const validator = require("validator");
 
 const validateSignUpData = (req) => {
-    const{firstName , lastName , emailId , password} = req.body;
+  const { firstName, emailId, password } = req.body;
 
-    if(!firstName || lastName){
-       throw new Error("Enter a name");
-    }
-    else if (!validator.isEmail(emailId)){
-      throw new Error("email is not valid!");
-    }
-    else if(!validator.isStrongPassword(password)){
-      throw new Error("please enter a strong password");  
-    }
+  if (!firstName) {
+    throw new Error("First name is required");
+  }
+
+  if (!emailId) {
+    throw new Error("Email is required");
+  }
+
+  if (!password) {
+    throw new Error("Password is required");
+  }
+
+  if (!validator.isEmail(emailId)) {
+    throw new Error("Email is not valid");
+  }
+
+  if (!validator.isStrongPassword(password)) {
+    throw new Error("Please enter a strong password");
+  }
 };
 
 module.exports = {validateSignUpData,};

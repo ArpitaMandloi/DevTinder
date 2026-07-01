@@ -4,10 +4,12 @@ const connectionRequestSchema = new mongoose.Schema(
   {
     fromUserId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // reference to the user collection
       required: true,
     },
     toUserId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref : "User",
       required: true,
     },
     status: {
@@ -21,14 +23,12 @@ const connectionRequestSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
-
-
 
 const connectionRequestModel = mongoose.model(
   "ConnectionRequest",
-  connectionRequestSchema
+  connectionRequestSchema,
 );
 
 module.exports = connectionRequestModel;

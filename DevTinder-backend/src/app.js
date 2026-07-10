@@ -28,9 +28,11 @@ connectDB()
   .then(() => {
     console.log("Database connection established...");
 
-    app.listen(7777, () => {
-      console.log("server is successfully listening on port 7777..");
-    });
+    const PORT = process.env.PORT || 7777;
+
+app.listen(PORT, () => {
+  console.log(`Server is successfully listening on port ${PORT}`);
+});
   })
   .catch((err) => {
     console.log("Database cannot be connected !!");

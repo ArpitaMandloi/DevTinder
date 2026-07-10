@@ -4,13 +4,22 @@ const connectDB = require("./config/database");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://dev-tinder-silk.vercel.app",
+  "https://dev-tinder-7u9gv9kji-arpitamandlois-projects.vercel.app",
+  "https://dev-tinder-git-main-arpitamandlois-projects.vercel.app",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://dev-tinder-silk.vercel.app",
-      "https://dev-tinder-7u9gv9kji-arpitamandlois-projects.vercel.app",
-    ],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );

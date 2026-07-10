@@ -139,28 +139,28 @@ If you like this project, don't forget to ⭐ the repository.
 
 ### 🏠 Home Page
 
-![Home](./assets/Home.png)
+![Home](./DevTinder-Frontend/src/assets/Home.png)
 
 ---
 
 ### 📝 Signup Page
 
-![Signup](./assets/Signup.png)
+![Signup](./DevTinder-Frontend/src/assets/Signup.png)
 
 ---
 
 ### 🔐 Login Page
 
-![Login](./assets/login.png)
+![Login](./DevTinder-Frontend/src/assets/login.png)
 
 ---
 
 ### ❤️ Developer Feed
 
-![Feed](./assets/Feed.png)
+![Feed](./DevTinder-Frontend/src/assets/Feed.png)
 
 ---
 
 ### 👤 Profile Page
 
-![Profile](./assets/Profile.png)
+![Profile](./DevTinder-Frontend/src/assets/Profile.png)

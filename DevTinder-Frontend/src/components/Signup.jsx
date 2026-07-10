@@ -1,0 +1,397 @@
+import React, { useState } from "react";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { BASE_URL } from "../utils/constants";
+import { motion, AnimatePresence } from "framer-motion";
+
+const Signup = () => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [emailId, setEmailId] = useState("");
+  const [password, setPassword] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+   const [showPassword, setShowPassword] = useState(false);
+
+  const { isDarkMode } = useOutletContext();
+
+  const validateForm = () => {
+   
+    if (
+      !firstName ||
+      !emailId ||
+      !password ||
+      !age ||
+      !gender
+    ) {
+      setError("Please fill all required fields.");
+      return false;
+    }
+
+    if (!emailId.includes("@")) {
+      setError("Please enter a valid email.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSignup = async () => {
+    setError("");
+
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/signup`,
+        {
+          firstName,
+          lastName,
+          emailId,
+          password,
+          age,
+          gender,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      dispatch(addUser(res.data.data || res.data));
+      navigate("/feed");
+    } catch (err) {
+      setError(err.response?.data || "Signup Failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+ return (
+  <div className="relative min-h-[85vh] flex items-center justify-center px-6">
+
+  <div className="grid lg:grid-cols-2 gap-16 items-center max-w-7xl w-full">
+
+    {/* LEFT SIDE */}
+
+    <motion.div
+      initial={{ opacity: 0, x: -80 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.8 }}
+      className="hidden lg:block"
+    >
+      <span
+        className={`inline-flex items-center gap-2 px-5 py-2 rounded-full border backdrop-blur-xl ${
+          isDarkMode
+            ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+            : "bg-white/70 border-indigo-200 text-indigo-700"
+        }`}
+      >
+        🚀 Join The Developer Community
+      </span>
+
+      <h1
+        className={`mt-8 text-6xl font-black leading-tight ${
+          isDarkMode ? "text-white" : "text-slate-900"
+        }`}
+      >
+        Build Your
+        <br />
+        <span className="text-cyan-500">
+          Dream Network
+        </span>
+        <br />
+        Today.
+      </h1>
+
+      <p
+        className={`mt-8 text-xl leading-9 max-w-xl ${
+          isDarkMode ? "text-slate-400" : "text-slate-600"
+        }`}
+      >
+        Meet passionate developers, collaborate on exciting projects,
+        discover career opportunities and grow with one of the fastest
+        growing developer communities.
+      </p>
+
+      <div className="grid grid-cols-3 gap-8 mt-14">
+
+        <div>
+          <h2 className="text-5xl font-black text-cyan-500">10K+</h2>
+          <p className={isDarkMode ? "text-slate-400 mt-2" : "text-slate-600 mt-2"}>
+            Developers
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-5xl font-black text-violet-500">200+</h2>
+          <p className={isDarkMode ? "text-slate-400 mt-2" : "text-slate-600 mt-2"}>
+            Companies
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-5xl font-black text-blue-500">24/7</h2>
+          <p className={isDarkMode ? "text-slate-400 mt-2" : "text-slate-600 mt-2"}>
+            Community
+          </p>
+        </div>
+
+      </div>
+
+    </motion.div>
+
+    {/* RIGHT SIDE */}
+
+    <motion.div
+      initial={{ opacity: 0, x: 80, scale: 0.9 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      transition={{ duration: 0.8 }}
+      className={`w-full max-w-lg mx-auto rounded-[32px] border backdrop-blur-3xl p-8 shadow-2xl ${
+        isDarkMode
+          ? "bg-black/50 border-white/10"
+          : "bg-white/70 border-white"
+      }`}
+    >
+
+      <div className="text-center mb-8">
+
+        <h2
+          className={`text-4xl font-black ${
+            isDarkMode ? "text-white" : "text-slate-900"
+          }`}
+        >
+          Create Account
+        </h2>
+
+        <p
+          className={`mt-3 ${
+            isDarkMode ? "text-slate-400" : "text-slate-600"
+          }`}
+        >
+          Join DevTinder and start connecting with developers.
+        </p>
+
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-500"
+          >
+            ⚠️ {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="space-y-5">
+
+
+        {/* First Name */}
+
+        <div>
+          <label
+            className={`block mb-2 font-semibold ${
+              isDarkMode ? "text-slate-300" : "text-slate-700"
+            }`}
+          >
+            First Name
+          </label>
+
+          <input
+            type="text"
+            placeholder="John"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            className={`w-full px-5 py-4 rounded-2xl border outline-none transition-all ${
+              isDarkMode
+                ? "bg-[#111]/80 border-gray-800 text-white focus:border-cyan-500"
+                : "bg-white border-slate-300 text-slate-900 focus:border-cyan-500"
+            }`}
+          />
+        </div>
+
+        {/* Last Name */}
+
+        <div>
+          <label
+            className={`block mb-2 font-semibold ${
+              isDarkMode ? "text-slate-300" : "text-slate-700"
+            }`}
+          >
+            Last Name
+          </label>
+
+          <input
+            type="text"
+            placeholder="Doe"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className={`w-full px-5 py-4 rounded-2xl border outline-none transition-all ${
+              isDarkMode
+                ? "bg-[#111]/80 border-gray-800 text-white focus:border-cyan-500"
+                : "bg-white border-slate-300 text-slate-900 focus:border-cyan-500"
+            }`}
+          />
+        </div>
+
+        {/* Email */}
+
+        <div>
+          <label
+            className={`block mb-2 font-semibold ${
+              isDarkMode ? "text-slate-300" : "text-slate-700"
+            }`}
+          >
+            Email Address
+          </label>
+
+          <input
+            type="email"
+            placeholder="developer@example.com"
+            value={emailId}
+            onChange={(e) => setEmailId(e.target.value)}
+            className={`w-full px-5 py-4 rounded-2xl border outline-none transition-all ${
+              isDarkMode
+                ? "bg-[#111]/80 border-gray-800 text-white focus:border-cyan-500"
+                : "bg-white border-slate-300 text-slate-900 focus:border-cyan-500"
+            }`}
+          />
+        </div>
+
+        {/* Password */}
+
+        <div>
+          <label
+            className={`block mb-2 font-semibold ${
+              isDarkMode ? "text-slate-300" : "text-slate-700"
+            }`}
+          >
+            Password
+          </label>
+
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`w-full px-5 py-4 rounded-2xl border outline-none transition-all ${
+                isDarkMode
+                  ? "bg-[#111]/80 border-gray-800 text-white focus:border-cyan-500"
+                  : "bg-white border-slate-300 text-slate-900 focus:border-cyan-500"
+              }`}
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-5 top-1/2 -translate-y-1/2"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+
+          <div>
+            <label
+              className={`block mb-2 font-semibold ${
+                isDarkMode ? "text-slate-300" : "text-slate-700"
+              }`}
+            >
+              Age
+            </label>
+
+            <input
+              type="number"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="21"
+              className={`w-full px-5 py-4 rounded-2xl border outline-none ${
+                isDarkMode
+                  ? "bg-[#111]/80 border-gray-800 text-white"
+                  : "bg-white border-slate-300 text-slate-900"
+              }`}
+            />
+          </div>
+
+          <div>
+            <label
+              className={`block mb-2 font-semibold ${
+                isDarkMode ? "text-slate-300" : "text-slate-700"
+              }`}
+            >
+              Gender
+            </label>
+
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className={`w-full px-5 py-4 rounded-2xl border outline-none ${
+                isDarkMode
+                  ? "bg-[#111]/80 border-gray-800 text-white"
+                  : "bg-white border-slate-300 text-slate-900"
+              }`}
+            >
+              <option value="">Select</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleSignup}
+          disabled={isLoading}
+          className="w-full py-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-lg mt-2"
+        >
+          {isLoading ? (
+            <span className="loading loading-spinner loading-sm"></span>
+          ) : (
+            "Create Account"
+          )}
+        </motion.button>
+
+        <p
+          className={`text-center mt-6 ${
+            isDarkMode ? "text-slate-400" : "text-slate-600"
+          }`}
+        >
+          Already have an account?{" "}
+          <span
+            onClick={() => navigate("/login")}
+            className="text-cyan-500 font-bold cursor-pointer hover:underline"
+          >
+            Login
+          </span>
+        </p>
+
+      </div>
+
+    </motion.div>
+
+  </div>
+
+</div>
+);
+};
+
+export default Signup;

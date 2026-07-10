@@ -8,6 +8,7 @@ import Home from "./components/Home";
 import Feed from "./components/Feed";
 import Connections from "./components/Connections";
 import Requests from "./components/Requests";
+import Signup from "./components/Signup";
 
 function App() {
   return (
@@ -15,14 +16,15 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Main Layout Wrapper */}
-          <Route path="/" element={<Body />}>
+        <Route path="/" element={<Body />}>
   <Route index element={<Home />} />
   <Route path="login" element={<Login />} />
-  <Route path="profile" element={<Profile />} />
+  <Route path="signup" element={<Signup />} />
+
   <Route path="feed" element={<Feed />} />
+  <Route path="profile" element={<Profile />} />
   <Route path="connections" element={<Connections />} />
   <Route path="requests" element={<Requests />} />
-
 </Route>
 
 

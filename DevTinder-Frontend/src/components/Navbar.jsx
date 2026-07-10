@@ -11,6 +11,7 @@ const Navbar = ({ isDarkMode, setIsDarkMode }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const user = useSelector((store) => store.user);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -19,13 +20,17 @@ const Navbar = ({ isDarkMode, setIsDarkMode }) => {
       await axios.post(
         `${BASE_URL}/logout`,
         {},
-        { withCredentials: true }
+        {
+          withCredentials: true,
+        }
       );
 
       dispatch(removeUser());
+
       setIsOpen(false);
 
       navigate("/", { replace: true });
+
     } catch (err) {
       console.error(err);
     }
@@ -36,91 +41,171 @@ const Navbar = ({ isDarkMode, setIsDarkMode }) => {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{
-        duration: 0.8,
+        duration: 0.7,
         type: "spring",
         bounce: 0.35,
       }}
-      className={`fixed top-0 left-0 w-full z-50 backdrop-blur-md border-b shadow-xl transition-colors duration-500 ${
+      className={`fixed top-0 left-0 w-full z-50 border-b backdrop-blur-2xl transition-all duration-500 ${
         isDarkMode
-          ? "bg-black/80 border-gray-800"
-          : "bg-white/70 border-white/40"
+          ? "bg-[#05070d]/75 border-cyan-500/10"
+          : "bg-white/80 border-slate-200 shadow-lg"
       }`}
     >
       {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-10"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
 
-      <div className="relative z-20 max-w-7xl mx-auto px-6 py-3">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 z-40"
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="relative z-50 max-w-7xl mx-auto px-6 py-4">
+
         <div className="flex items-center justify-between">
+
           {/* Logo */}
+
           <Link to="/">
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.04 }}
               className="cursor-pointer"
             >
-              <h1 className="text-3xl font-extrabold tracking-tight">
+              <h1 className="text-3xl font-black tracking-tight">
                 <span
                   className={
-                    isDarkMode ? "text-white" : "text-slate-800"
+                    isDarkMode
+                      ? "text-white"
+                      : "text-slate-900"
                   }
                 >
                   Dev
                 </span>
-                <span className="text-cyan-500">Tinder</span>
+
+                <span className="text-cyan-500">
+                  Tinder
+                </span>
               </h1>
             </motion.div>
           </Link>
+                    {/* Center Navigation */}
+
+          {!user && (
+            <nav className="hidden lg:flex items-center gap-10">
+
+              {[
+                { name: "Home", href: "#home" },
+                { name: "Features", href: "#features" },
+                { name: "How It Works", href: "#how-it-works" },
+                { name: "Community", href: "#community" },
+                { name: "Contact", href: "#contact" },
+              ].map((item) => (
+                <motion.a
+                  key={item.name}
+                  href={item.href}
+                  whileHover={{ y: -2 }}
+                  className={`relative font-semibold group transition ${
+                    isDarkMode
+                      ? "text-slate-300 hover:text-cyan-400"
+                      : "text-slate-700 hover:text-cyan-600"
+                  }`}
+                >
+                  {item.name}
+
+                  <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-cyan-500 transition-all duration-300 group-hover:w-full" />
+                </motion.a>
+              ))}
+
+            </nav>
+          )}
 
           {/* Right Side */}
-          <div className="flex items-center gap-5">
-            {/* Theme Toggle */}
+
+          <div className="flex items-center gap-2">
+
+            {/* Theme */}
+
             <motion.button
-              whileHover={{ scale: 1.2, rotate: 180 }}
+              whileHover={{ scale: 1.15, rotate: 180 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`text-2xl transition-colors ${
+              className={`text-2xl ${
                 isDarkMode
                   ? "text-gray-400 hover:text-yellow-300"
-                  : "text-slate-500 hover:text-blue-500"
+                  : "text-slate-500 hover:text-indigo-600"
               }`}
             >
               {isDarkMode ? "☀️" : "🌙"}
             </motion.button>
 
             {!user ? (
-              <Link to="/login">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-6 py-2 rounded-xl font-bold bg-cyan-500 text-black shadow-lg shadow-cyan-500/20"
-                >
-                  Login
-                </motion.button>
-              </Link>
+
+              <div className="flex items-center gap-3">
+
+                <Link to="/login">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`px-6 py-2.5 rounded-xl font-bold ${
+                      isDarkMode
+                        ? "border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
+                        : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    Login
+                  </motion.button>
+                </Link>
+
+                <Link to="/signup">
+                  <motion.button
+                    whileHover={{
+                      scale: 1.05,
+                      boxShadow: "0 0 25px rgba(34,211,238,.35)",
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`px-7 py-2.5 rounded-xl font-bold ${
+                      isDarkMode
+                        ? "bg-cyan-500 text-black hover:bg-cyan-400"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700"
+                    }`}
+                  >
+                    Get Started
+                  </motion.button>
+                </Link>
+
+              </div>
+
             ) : (
-              <div className="flex items-center gap-4">
+
+              <div className="flex items-center gap-2">
+
                 <span
-                  className={`hidden sm:block font-semibold ${
+                  className={`hidden md:block font-semibold ${
                     isDarkMode
                       ? "text-white"
                       : "text-slate-800"
                   }`}
                 >
-                  Welcome, {user.firstName}!
+                  Welcome,
+                  <span className="text-cyan-500 ml-2">
+                    {user.firstName}
+                  </span>
                 </span>
 
                 <div className="relative">
+
                   <motion.button
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsOpen((prev) => !prev)}
-                    className={`w-11 h-11 rounded-full overflow-hidden border-2 transition-all ${
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={`w-11 h-11 rounded-full overflow-hidden border-2 ${
                       isDarkMode
-                        ? "border-gray-700 hover:border-cyan-400"
+                        ? "border-slate-700 hover:border-cyan-400"
                         : "border-slate-300 hover:border-cyan-500"
                     }`}
                   >
@@ -133,13 +218,12 @@ const Navbar = ({ isDarkMode, setIsDarkMode }) => {
                       className="w-full h-full object-cover"
                     />
                   </motion.button>
-
-                  <AnimatePresence>
+                                    <AnimatePresence>
                     {isOpen && (
                       <motion.div
                         initial={{
                           opacity: 0,
-                          y: 15,
+                          y: 10,
                           scale: 0.95,
                         }}
                         animate={{
@@ -153,75 +237,88 @@ const Navbar = ({ isDarkMode, setIsDarkMode }) => {
                           scale: 0.95,
                         }}
                         transition={{ duration: 0.2 }}
-                        className={`absolute right-0 mt-4 w-56 rounded-2xl overflow-hidden border shadow-2xl z-30 ${
+                        className={`absolute right-0 top-14 w-64 rounded-2xl overflow-hidden border shadow-2xl z-50 ${
                           isDarkMode
                             ? "bg-[#101010]/95 border-gray-800 text-gray-300"
-                            : "bg-white/95 border-slate-200 text-slate-700"
+                            : "bg-white border-slate-200 text-slate-700"
                         }`}
                       >
-                        <ul className="p-2 space-y-1">
-                          <li onClick={() => setIsOpen(false)}>
+                        <ul className="p-2">
+
+                          <motion.li whileHover={{ x: 5 }}>
                             <Link
                               to="/profile"
-                              className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-cyan-500/10 transition"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-500 transition"
                             >
                               👤 My Profile
                             </Link>
-                          </li>
+                          </motion.li>
 
-                          <li onClick={() => setIsOpen(false)}>
+                          <motion.li whileHover={{ x: 5 }}>
                             <Link
                               to="/connections"
-                              className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-cyan-500/10 transition"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-500 transition"
                             >
                               ❤️ Connections
                             </Link>
-                          </li>
+                          </motion.li>
 
-                          <li onClick={() => setIsOpen(false)}>
+                          <motion.li whileHover={{ x: 5 }}>
                             <Link
                               to="/requests"
-                              className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-cyan-500/10 transition"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-500 transition"
                             >
-                              ❤️ Requests
+                              🔔 Requests
                             </Link>
-                          </li>
+                          </motion.li>
 
-                          <li onClick={() => setIsOpen(false)}>
+                          <motion.li whileHover={{ x: 5 }}>
                             <Link
                               to="/settings"
-                              className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-cyan-500/10 transition"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-500 transition"
                             >
                               ⚙️ Settings
                             </Link>
-                          </li>
+                          </motion.li>
 
                           <div
-                            className={`my-1 h-px ${
+                            className={`my-2 h-px ${
                               isDarkMode
                                 ? "bg-gray-800"
                                 : "bg-slate-200"
                             }`}
                           />
 
-                          <li>
+                          <motion.li whileHover={{ x: 5 }}>
                             <button
                               onClick={handleLogout}
-                              className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-red-500 hover:bg-red-500/10 transition"
+                              className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition"
                             >
                               🚪 Logout
                             </button>
-                          </li>
+                          </motion.li>
+
                         </ul>
                       </motion.div>
                     )}
                   </AnimatePresence>
+
                 </div>
+
               </div>
+
             )}
+
           </div>
+
         </div>
+
       </div>
+
     </motion.header>
   );
 };

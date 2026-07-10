@@ -8,8 +8,10 @@ import Navbar from "./Navbar";
 import DynamicBackground from "./DynamicBackground";
 import Footer from "./Footer";
 
+
 import { BASE_URL } from "../utils/constants";
 import { addUser } from "../utils/userSlice";
+
 
 const Body = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -25,22 +27,29 @@ const Body = () => {
   // Fetch Logged In User
   // ==========================
   const fetchUser = useCallback(async () => {
-    if (userData) return;
+  // Home, Login aur Signup page par API call mat karo
+  const publicRoutes = ["/", "/login", "/signup"];
 
-    try {
-      const res = await axios.get(`${BASE_URL}/profile/view`, {
-        withCredentials: true,
-      });
+  if (publicRoutes.includes(location.pathname)) {
+    return;
+  }
 
-      dispatch(addUser(res.data));
-    } catch (err) {
-      if (err.response?.status === 401) {
-        navigate("/login", { replace: true });
-      }
+  if (userData) return;
 
-      console.error(err);
+  try {
+    const res = await axios.get(`${BASE_URL}/profile/view`, {
+      withCredentials: true,
+    });
+
+    dispatch(addUser(res.data));
+  } catch (err) {
+    if (err.response?.status === 401) {
+      navigate("/login", { replace: true });
     }
-  }, [dispatch, navigate, userData]);
+
+    console.log(err);
+  }
+}, [dispatch, navigate, userData, location.pathname]);
 
   useEffect(() => {
     fetchUser();

@@ -48,12 +48,15 @@ userRouter.get("/user/connection", userAuth, async (req, res) => {
       .populate("toUserId", USER_SAFE_DATA);
 
     // Return the other user in each connection
-    const data = ConnectionRequests.map((row) => {
-      if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
-        return row.toUserId;
-      }
-      return row.fromUserId;
-    });
+   const data = ConnectionRequests
+  .filter((row) => row.fromUserId && row.toUserId)
+  .map((row) => {
+    if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
+      return row.toUserId;
+    }
+    return row.fromUserId;
+  });
+  console.log(ConnectionRequests);
 
     res.json({
       message: "Connections fetched successfully",

@@ -1,5 +1,10 @@
 # 🚀 DevTinder
 
+![React](https://img.shields.io/badge/React-19-blue?logo=react)
+![NodeJS](https://img.shields.io/badge/Node.js-Express-green?logo=node.js)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?logo=mongodb)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
 DevTinder is a full-stack MERN web application inspired by Tinder, designed exclusively for developers. It helps developers discover, connect, and build meaningful professional relationships based on their skills, interests, and profiles. Users can send connection requests, accept or reject requests, manage their network, and explore other developer profiles in a clean and modern interface.
 
 ---
@@ -12,10 +17,19 @@ Whether you're looking for a coding partner, a project teammate, or simply expan
 
 ---
 
+## 🌐 Live Demo
+
+🚀 **Live Application:**  
+https://dev-tinder-git-main-arpitamandlois-projects.vercel.app
+
+💻 **GitHub Repository:**  
+https://github.com/ArpitaMandloi/DevTinder
+
 ## ✨ Features
 
 * 👤 User Authentication (Sign Up & Login)
 * 🔐 Secure Authentication using JWT
+* 🍪 Secure Cookie-based Authentication
 * 📝 Create and Update Developer Profile
 * 🖼️ Upload Profile Information
 * 💻 Add Skills and About Section
@@ -28,6 +42,7 @@ Whether you're looking for a coding partner, a project teammate, or simply expan
 * ⚡ Real-time Smooth User Experience
 * 🔒 Protected Routes
 * 📱 Mobile-Friendly Design
+* ☁️ Fully Deployed on Vercel & Render
 
 ---
 
@@ -54,6 +69,16 @@ Whether you're looking for a coding partner, a project teammate, or simply expan
 * CORS
 
 ---
+
+## ☁️ Deployment
+
+| Service | Platform |
+|----------|----------|
+| Frontend | Vercel |
+| Backend | Render |
+| Database | MongoDB Atlas |
+
+----
 
 ## 📂 Project Structure
 
@@ -101,7 +126,7 @@ npm run dev
 * 🌐 Advanced Developer Search & Filters
 * ⭐ Profile Verification
 * 📌 Bookmark Developers
-* 🌍 Deployment on Cloud
+* 🤖 AI-Based Developer Recommendations
 
 ---
 
@@ -110,3 +135,32 @@ npm run dev
 **Arpita Mandloi**
 
 If you like this project, don't forget to ⭐ the repository.
+## 📷 Screenshots
+
+### 🏠 Home Page
+
+![Home](./assets/Home.png)
+
+---
+
+### 📝 Signup Page
+
+![Signup](./assets/Signup.png)
+
+---
+
+### 🔐 Login Page
+
+![Login](./assets/login.png)
+
+---
+
+### ❤️ Developer Feed
+
+![Feed](./assets/Feed.png)
+
+---
+
+### 👤 Profile Page
+
+![Profile](./assets/Profile.png)

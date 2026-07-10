@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { BASE_URL } from "../utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import { addFeed } from "../utils/feedSlice";
-import UserCard from "./UserCard";
+import UserCard from "./userCard";
 import { useOutletContext } from "react-router-dom";
 
 const Feed = () => {

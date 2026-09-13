@@ -6,13 +6,13 @@ const cors = require("cors");
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://dev-tinder-git-main-arpitamandlois-projects.vercel.app",
-    ],
+    origin: true,
     credentials: true,
   })
 );
+
+app.use(express.json());
+app.use(cookieParser());
 app.use(express.json());
 app.use(cookieParser()); 
 

@@ -9,6 +9,8 @@ const bcrypt = require("bcrypt");
 // SIGNUP
 // ======================
 authRouter.post("/signup", async (req, res) => {
+  console.log("🔥 SIGNUP API HIT");
+  
   try {
     // Validate Request Body
     validateSignUpData(req);

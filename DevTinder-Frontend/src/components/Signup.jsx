@@ -67,10 +67,14 @@ const Signup = () => {
         }
       );
 
-      dispatch(addUser(res.data.data || res.data));
+      dispatch(addUser(res.data.data?.user || res.data.data || res.data));
       navigate("/feed");
     } catch (err) {
-      setError(err.response?.data || "Signup Failed");
+      setError(
+        err.response?.data?.message ||
+          (typeof err.response?.data === "string" ? err.response?.data : null) ||
+          "Signup Failed. Please check your details."
+      );
     } finally {
       setIsLoading(false);
     }

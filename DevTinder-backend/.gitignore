@@ -1,2 +1,6 @@
 node_modules
-homework.md 
+homework.md
+.env
+.env.*
+*.log
+.DS_Store

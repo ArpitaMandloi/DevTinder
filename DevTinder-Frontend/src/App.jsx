@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Provider } from "react-redux";
 import appStore from "./utils/appStore";
 import Body from "./components/Body";
@@ -9,6 +9,10 @@ import Feed from "./components/Feed";
 import Connections from "./components/Connections";
 import Requests from "./components/Requests";
 import Signup from "./components/Signup";
+import Chat from "./components/Chat";
+import Settings from "./components/Settings";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
 
 function App() {
   return (
@@ -16,21 +20,92 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Main Layout Wrapper */}
-        <Route path="/" element={<Body />}>
-  <Route index element={<Home />} />
-  <Route path="login" element={<Login />} />
-  <Route path="signup" element={<Signup />} />
+          <Route path="/" element={<Body />}>
+            <Route index element={<Home />} />
+            
+            {/* Public-only routes */}
+            <Route
+              path="login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="signup"
+              element={
+                <PublicRoute>
+                  <Signup />
+                </PublicRoute>
+              }
+            />
 
-  <Route path="feed" element={<Feed />} />
-  <Route path="profile" element={<Profile />} />
-  <Route path="connections" element={<Connections />} />
-  <Route path="requests" element={<Requests />} />
-</Route>
+            {/* Protected app routes */}
+            <Route
+              path="feed"
+              element={
+                <ProtectedRoute>
+                  <Feed />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="connections"
+              element={
+                <ProtectedRoute>
+                  <Connections />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="requests"
+              element={
+                <ProtectedRoute>
+                  <Requests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="chat"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="chat/:targetUserId"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
 
-
+            {/* 404 Catch All */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </Provider>
   );
 }
+
 export default App;

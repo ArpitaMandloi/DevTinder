@@ -52,12 +52,14 @@ const Login = () => {
         }
       );
 
-      dispatch(addUser(res.data));
+      dispatch(addUser(res.data.data?.user || res.data.data || res.data));
 
       navigate("/feed");
     } catch (err) {
       setError(
-        err.response?.data || "Invalid Credentials. Please try again."
+        err.response?.data?.message ||
+          (typeof err.response?.data === "string" ? err.response?.data : null) ||
+          "Invalid Credentials. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -222,7 +224,7 @@ const Login = () => {
 
           </AnimatePresence>
 
-          <div className="space-y-5"></div>
+          <div className="space-y-5">
                       {/* Email */}
 
             <div>
@@ -368,9 +370,8 @@ const Login = () => {
               >
                 Create New Account
               </motion.button>
-
-                      </div> {/* space-y-5 */}
-
+            </div> {/* text-center */}
+          </div> {/* space-y-5 */}
         </motion.div> {/* Login Card */}
 
       </div> {/* Grid */}

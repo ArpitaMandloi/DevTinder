@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: devtinder_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: devtinder
+
+  backend:
+    build:
+      context: ./DevTinder-backend
+      dockerfile: Dockerfile
+    container_name: devtinder_backend
+    restart: unless-stopped
+    ports:
+      - "7777:7777"
+    environment:
+      PORT: 7777
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongodb:27017/devtinder
+      JWT_SECRET: devtinder_super_secret_jwt_key_prod
+      CLIENT_URL: http://localhost:5173
+    depends_on:
+      - mongodb
+
+  frontend:
+    build:
+      context: ./DevTinder-Frontend
+      dockerfile: Dockerfile
+    container_name: devtinder_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:

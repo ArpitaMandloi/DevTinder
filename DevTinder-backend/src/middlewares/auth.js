@@ -1,38 +1,45 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const ApiError = require("../utils/apiError");
 
 const userAuth = async (req, res, next) => {
   try {
-    console.log("Cookies:", req.cookies);
-    const { token } = req.cookies;
+    // 1. Extract token from cookies OR Authorization header
+    let token = req.cookies?.token;
 
-    if (!token) {
-      return res.status(401).send("Please Login");
+    if (!token && req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      }
     }
 
-    const decodeObj = jwt.verify(token, "DEV@Tinder$790");
+    if (!token) {
+      throw new ApiError(401, "Authentication required. Please log in.");
+    }
 
-    const { _id } = decodeObj;
+    // 2. Verify token
+    const secret = process.env.JWT_SECRET || "DEV@Tinder$790";
+    const decoded = jwt.verify(token, secret);
 
+    const { _id } = decoded;
+
+    // 3. Find user
     const user = await User.findById(_id);
 
     if (!user) {
-      throw new Error("User not found!");
+      throw new ApiError(401, "User not found or account deactivated.");
     }
 
     req.user = user;
+    req.token = token;
 
     next();
   } catch (err) {
-    res.status(401).send("ERROR: " + err.message);
+    next(err);
   }
 };
 
 module.exports = {
   userAuth,
 };
-
-
-
-
-

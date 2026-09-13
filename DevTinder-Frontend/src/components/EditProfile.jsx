@@ -5,6 +5,7 @@ import { BASE_URL } from "../utils/constants";
 import { addUser } from "../utils/userSlice";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOutletContext } from "react-router-dom";
+import { FaLocationDot } from "react-icons/fa6";
 
 const EditProfile = ({ user, onClose }) => {
   const { isDarkMode } = useOutletContext();
@@ -15,27 +16,36 @@ const EditProfile = ({ user, onClose }) => {
   const [photoUrl, setPhotoUrl] = useState(user?.photoUrl || "");
   const [age, setAge] = useState(user?.age || "");
   const [gender, setGender] = useState(user?.gender || "");
+  const [headline, setHeadline] = useState(user?.headline || "");
+  const [location, setLocation] = useState(user?.location || "");
+  const [yearsOfExperience, setYearsOfExperience] = useState(
+    user?.yearsOfExperience || ""
+  );
+  const [githubUsername, setGithubUsername] = useState(
+    user?.githubUsername || ""
+  );
+  const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedinUrl || "");
+  const [portfolioUrl, setPortfolioUrl] = useState(user?.portfolioUrl || "");
   const [about, setAbout] = useState(user?.about || "");
   const [skills, setSkills] = useState(user?.skills || []);
   const [skillInput, setSkillInput] = useState("");
-  
+
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddSkill = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       const newSkill = skillInput.trim();
-      // Agar skill empty nahi hai aur pehle se added nahi hai toh add karo
       if (newSkill && !skills.includes(newSkill)) {
         setSkills([...skills, newSkill]);
       }
-      setSkillInput(""); // Input clear kardo
+      setSkillInput("");
     }
   };
 
   const removeSkill = (skillToRemove) => {
-    setSkills(skills.filter(skill => skill !== skillToRemove));
+    setSkills(skills.filter((skill) => skill !== skillToRemove));
   };
 
   const saveProfile = async () => {
@@ -43,16 +53,30 @@ const EditProfile = ({ user, onClose }) => {
       setIsLoading(true);
       setError("");
 
-      const res = await axios.patch(
-        `${BASE_URL}/profile/edit`,
-        { firstName, lastName, photoUrl, age, gender, about, skills },
-        { withCredentials: true }
-      );
+      const payload = {
+        firstName,
+        lastName,
+        photoUrl,
+        age: age ? Number(age) : undefined,
+        gender,
+        headline,
+        location,
+        yearsOfExperience: yearsOfExperience
+          ? Number(yearsOfExperience)
+          : undefined,
+        githubUsername,
+        linkedinUrl,
+        portfolioUrl,
+        about,
+        skills,
+      };
 
-      // Redux aur Main Profile turant update ho jayenge
+      const res = await axios.patch(`${BASE_URL}/profile/edit`, payload, {
+        withCredentials: true,
+      });
+
       dispatch(addUser(res.data.data));
-      onClose(true); // true pass kiya taaki Parent ko pata chale ki update successful tha (for Toast)
-
+      onClose(true);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -65,28 +89,34 @@ const EditProfile = ({ user, onClose }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto"
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
-        className={`relative w-full max-w-5xl my-8 rounded-[2rem] border shadow-2xl flex flex-col lg:flex-row overflow-hidden ${
-          isDarkMode ? "bg-[#111111] border-gray-800" : "bg-white border-slate-200"
+        className={`relative w-full max-w-5xl my-6 rounded-[2rem] border shadow-2xl flex flex-col lg:flex-row overflow-hidden ${
+          isDarkMode
+            ? "bg-[#0d111a] border-slate-800"
+            : "bg-white border-slate-200"
         }`}
       >
         {/* Close Button */}
         <button
           onClick={() => onClose(false)}
-          className="absolute top-6 right-6 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+          className="absolute top-6 right-6 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-red-500/15 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
         >
           ✕
         </button>
 
         {/* Left Side: Form */}
-        <div className="flex-1 p-8 lg:p-12 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 max-h-[85vh] overflow-y-auto">
-          <h2 className={`text-3xl font-black mb-8 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-            Edit <span className="text-cyan-500">Profile</span>
+        <div className="flex-1 p-6 lg:p-10 border-b lg:border-b-0 lg:border-r border-inherit max-h-[85vh] overflow-y-auto">
+          <h2
+            className={`text-2xl lg:text-3xl font-black mb-6 ${
+              isDarkMode ? "text-white" : "text-slate-900"
+            }`}
+          >
+            Edit <span className="text-cyan-500">Developer Profile</span>
           </h2>
 
           {error && (
@@ -95,96 +125,215 @@ const EditProfile = ({ user, onClose }) => {
             </div>
           )}
 
-          {}
-          <div className="space-y-5">
+          <div className="space-y-4">
+            {/* Name */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="form-control">
-                <label className={`font-bold text-sm mb-2 ${isDarkMode ? "text-gray-400" : "text-slate-700"}`}>First Name</label>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  First Name
+                </label>
                 <input
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium transition-all ${
-                    isDarkMode ? "bg-black/50 border-gray-800 focus:border-cyan-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                      : "bg-slate-50 border-slate-200 focus:border-indigo-500"
                   }`}
                 />
               </div>
-              <div className="form-control">
-                <label className={`font-bold text-sm mb-2 ${isDarkMode ? "text-gray-400" : "text-slate-700"}`}>Last Name</label>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  Last Name
+                </label>
                 <input
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium transition-all ${
-                    isDarkMode ? "bg-black/50 border-gray-800 focus:border-cyan-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                      : "bg-slate-50 border-slate-200 focus:border-indigo-500"
                   }`}
                 />
               </div>
             </div>
 
-            <div className="form-control">
-              <label className={`font-bold text-sm mb-2 ${isDarkMode ? "text-gray-400" : "text-slate-700"}`}>Photo URL</label>
+            {/* Headline & Location */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  Headline / Role
+                </label>
+                <input
+                  type="text"
+                  value={headline}
+                  placeholder="e.g. Senior Frontend Dev"
+                  onChange={(e) => setHeadline(e.target.value)}
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                      : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  }`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={location}
+                  placeholder="e.g. Remote / Bangalore"
+                  onChange={(e) => setLocation(e.target.value)}
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                      : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Photo URL */}
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                Photo URL
+              </label>
               <input
                 type="text"
                 value={photoUrl}
                 onChange={(e) => setPhotoUrl(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border outline-none font-medium transition-all ${
-                  isDarkMode ? "bg-black/50 border-gray-800 focus:border-cyan-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                placeholder="https://..."
+                className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                  isDarkMode
+                    ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                    : "bg-slate-50 border-slate-200 focus:border-indigo-500"
                 }`}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="form-control">
-                <label className={`font-bold text-sm mb-2 ${isDarkMode ? "text-gray-400" : "text-slate-700"}`}>Age</label>
+            {/* Age, Gender & Experience */}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  Age
+                </label>
                 <input
                   type="number"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium transition-all ${
-                    isDarkMode ? "bg-black/50 border-gray-800 focus:border-cyan-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white"
+                      : "bg-slate-50 border-slate-200"
                   }`}
                 />
               </div>
-              <div className="form-control">
-                <label className={`font-bold text-sm mb-2 ${isDarkMode ? "text-gray-400" : "text-slate-700"}`}>Gender</label>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  Gender
+                </label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium transition-all ${
-                    isDarkMode ? "bg-black/50 border-gray-800 focus:border-cyan-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white"
+                      : "bg-slate-50 border-slate-200"
                   }`}
                 >
-                  <option value="">Select Gender</option>
+                  <option value="">Select</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  Exp (Years)
+                </label>
+                <input
+                  type="number"
+                  value={yearsOfExperience}
+                  onChange={(e) => setYearsOfExperience(e.target.value)}
+                  placeholder="e.g. 3"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white"
+                      : "bg-slate-50 border-slate-200"
+                  }`}
+                />
+              </div>
             </div>
 
-            <div className="form-control">
-              <label className={`font-bold text-sm mb-2 ${isDarkMode ? "text-gray-400" : "text-slate-700"}`}>About You</label>
+            {/* Developer Profiles: GitHub & LinkedIn */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  GitHub Username
+                </label>
+                <input
+                  type="text"
+                  value={githubUsername}
+                  onChange={(e) => setGithubUsername(e.target.value)}
+                  placeholder="e.g. torvalds"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                      : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  }`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                  LinkedIn URL
+                </label>
+                <input
+                  type="text"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/in/..."
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                      : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* About */}
+            <div>
+              <label className="block text-xs font-bold uppercase mb-1.5 opacity-75">
+                About You
+              </label>
               <textarea
                 rows="3"
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border outline-none font-medium transition-all ${
-                  isDarkMode ? "bg-black/50 border-gray-800 focus:border-cyan-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                placeholder="Share your experience, passions, and what you want to build..."
+                className={`w-full px-4 py-2.5 rounded-xl border outline-none text-sm font-medium ${
+                  isDarkMode
+                    ? "bg-[#141a29] border-slate-700 text-white focus:border-cyan-500"
+                    : "bg-slate-50 border-slate-200 focus:border-indigo-500"
                 }`}
               />
             </div>
 
-            {}
-            <div className="form-control">
-              <label className={`font-bold text-sm mb-2 flex justify-between items-center ${isDarkMode ? "text-gray-400" : "text-slate-700"}`}>
-                <span>Skills</span>
-                <span className="text-xs font-normal opacity-70">Press Enter to add</span>
+            {/* Skills */}
+            <div>
+              <label className="flex justify-between items-center text-xs font-bold uppercase mb-1.5 opacity-75">
+                <span>Skills (Press Enter to add)</span>
               </label>
-              
-              <div className={`w-full p-2 min-h-[52px] rounded-xl border transition-all flex flex-wrap gap-2 ${
-                isDarkMode ? "bg-black/50 border-gray-800 focus-within:border-cyan-500" : "bg-slate-50 border-slate-200 focus-within:border-indigo-500"
-              }`}>
+              <div
+                className={`w-full p-2 min-h-[50px] rounded-xl border flex flex-wrap gap-2 ${
+                  isDarkMode
+                    ? "bg-[#141a29] border-slate-700"
+                    : "bg-slate-50 border-slate-200"
+                }`}
+              >
                 <AnimatePresence>
                   {skills.map((skill) => (
                     <motion.span
@@ -192,50 +341,57 @@ const EditProfile = ({ user, onClose }) => {
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.8, opacity: 0 }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold ${
-                        isDarkMode ? "bg-cyan-500/20 text-cyan-400" : "bg-indigo-100 text-indigo-700"
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${
+                        isDarkMode
+                          ? "bg-cyan-500/20 text-cyan-400"
+                          : "bg-indigo-100 text-indigo-700"
                       }`}
                     >
                       {skill}
                       <button
                         type="button"
                         onClick={() => removeSkill(skill)}
-                        className={`w-4 h-4 rounded-full flex items-center justify-center text-xs hover:bg-black/20`}
+                        className="hover:text-red-400"
                       >
                         ✕
                       </button>
                     </motion.span>
                   ))}
                 </AnimatePresence>
-                
                 <input
                   type="text"
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={handleAddSkill}
-                  placeholder={skills.length === 0 ? "e.g. React, Node.js, Python..." : ""}
-                  className={`flex-1 min-w-[120px] px-2 py-1 outline-none bg-transparent font-medium ${
-                    isDarkMode ? "text-white placeholder-gray-600" : "text-slate-900 placeholder-slate-400"
-                  }`}
+                  placeholder={
+                    skills.length === 0 ? "e.g. React, Node.js, Go..." : ""
+                  }
+                  className="flex-1 min-w-[120px] px-2 py-1 outline-none bg-transparent text-sm font-medium"
                 />
               </div>
             </div>
 
-            {}
-            <div className="pt-4 flex gap-4">
+            {/* Buttons */}
+            <div className="pt-3 flex gap-4">
               <button
+                type="button"
                 onClick={() => onClose(false)}
-                className={`flex-1 py-3.5 rounded-xl font-bold border transition-colors ${
-                  isDarkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-slate-300 text-slate-700 hover:bg-slate-100"
+                className={`flex-1 py-3 rounded-xl font-bold text-sm border transition ${
+                  isDarkMode
+                    ? "border-slate-700 text-slate-300 hover:bg-slate-800"
+                    : "border-slate-300 text-slate-700 hover:bg-slate-100"
                 }`}
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={saveProfile}
                 disabled={isLoading}
-                className={`flex-1 py-3.5 rounded-xl font-black transition-colors ${
-                  isDarkMode ? "bg-cyan-500 text-black hover:bg-cyan-400" : "bg-indigo-600 text-white hover:bg-indigo-700"
+                className={`flex-1 py-3 rounded-xl font-black text-sm transition shadow-lg ${
+                  isDarkMode
+                    ? "bg-cyan-500 text-black hover:bg-cyan-400"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700"
                 }`}
               >
                 {isLoading ? "Saving..." : "Save Changes"}
@@ -244,56 +400,79 @@ const EditProfile = ({ user, onClose }) => {
           </div>
         </div>
 
-        {}
-        {/* Right Side: Live Preview (Read Only) */}
-        <div className={`w-full lg:w-[400px] p-8 flex flex-col items-center justify-center ${isDarkMode ? 'bg-[#0a0a0a]' : 'bg-slate-50'}`}>
-          <h3 className={`text-sm font-bold uppercase tracking-wider mb-8 ${isDarkMode ? "text-gray-500" : "text-slate-400"}`}>
+        {/* Right Side: Live Card Preview */}
+        <div
+          className={`w-full lg:w-[380px] p-8 flex flex-col items-center justify-center ${
+            isDarkMode ? "bg-[#080c14]" : "bg-slate-50"
+          }`}
+        >
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-6 opacity-60">
             Live Preview
           </h3>
-          
-          <div className="w-[300px] rounded-[30px] overflow-hidden border shadow-2xl relative bg-black border-gray-800">
-            <div className="h-[380px] relative">
+
+          <div className="w-[280px] rounded-[28px] overflow-hidden border shadow-2xl relative bg-black border-slate-800">
+            <div className="h-[340px] relative">
               <img
-                src={photoUrl || "https://via.placeholder.com/500x700?text=Developer"}
+                src={
+                  photoUrl ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500"
+                }
                 alt="Preview"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
-              
-              <div className="absolute bottom-0 left-0 w-full p-5">
-                <h2 className="text-2xl font-black text-white flex items-end gap-2 drop-shadow-md line-clamp-1">
-                  {firstName || "First"} {lastName || "Last"}
+
+              <div className="absolute bottom-0 left-0 w-full p-4">
+                <h2 className="text-xl font-black text-white flex items-end gap-1.5 truncate">
+                  {firstName || "Developer"} {lastName}
                 </h2>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <span className="rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-bold text-white">
+                <p className="text-xs text-cyan-400 font-semibold mt-0.5">
+                  {headline || "Full Stack Developer"}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <span className="rounded-full bg-white/10 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white">
                     🎂 {age || "--"}
                   </span>
-                  <span className="rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-bold text-white capitalize">
-                    {gender || "--"}
-                  </span>
+                  {location && (
+                    <span className="rounded-full bg-white/10 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white flex items-center gap-1">
+                      <FaLocationDot className="text-[8px]" /> {location}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-            
-            <div className={`p-5 ${isDarkMode ? 'bg-[#111111]' : 'bg-white'}`}>
-              <p className={`text-xs leading-relaxed line-clamp-3 mb-4 ${isDarkMode ? 'text-gray-400' : 'text-slate-600'}`}>
-                {about || "Your amazing bio will appear right here..."}
+
+            <div className={`p-4 ${isDarkMode ? "bg-[#0d111a]" : "bg-white"}`}>
+              <p
+                className={`text-xs leading-relaxed line-clamp-3 mb-3 ${
+                  isDarkMode ? "text-gray-300" : "text-slate-600"
+                }`}
+              >
+                {about || "Your developer story will appear here..."}
               </p>
-              
-              {/* Skills Preview in the Card */}
+
               {skills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {skills.slice(0, 4).map(skill => (
-                    <span key={skill} className={`px-2 py-1 rounded-md text-[10px] font-bold ${
-                      isDarkMode ? "bg-cyan-500/10 text-cyan-400" : "bg-indigo-100 text-indigo-700"
-                    }`}>
+                <div className="flex flex-wrap gap-1">
+                  {skills.slice(0, 4).map((skill) => (
+                    <span
+                      key={skill}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        isDarkMode
+                          ? "bg-cyan-500/15 text-cyan-400"
+                          : "bg-indigo-50 text-indigo-700"
+                      }`}
+                    >
                       {skill}
                     </span>
                   ))}
                   {skills.length > 4 && (
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${
-                      isDarkMode ? "bg-gray-800 text-gray-400" : "bg-slate-200 text-slate-500"
-                    }`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold ${
+                        isDarkMode
+                          ? "bg-slate-800 text-slate-400"
+                          : "bg-slate-200 text-slate-500"
+                      }`}
+                    >
                       +{skills.length - 4}
                     </span>
                   )}

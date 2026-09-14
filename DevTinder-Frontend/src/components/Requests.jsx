@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BASE_URL } from "../utils/constants";
 import { addRequests, removeRequest } from "../utils/requestSlice";
+import { addSingleConnection } from "../utils/connectionSlice";
 import { markAllAsRead } from "../utils/notificationSlice";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOutletContext, Link } from "react-router-dom";
@@ -42,6 +43,9 @@ const Requests = () => {
       dispatch(removeRequest(requestId));
 
       if (status === "accepted") {
+        if (fromUser) {
+          dispatch(addSingleConnection(fromUser));
+        }
         showToast(
           `Connected with ${devName}! 🎉 You can now start chatting.`,
           "success",

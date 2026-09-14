@@ -16,6 +16,7 @@ import { addUser } from "../utils/userSlice";
 import { getSocket } from "../utils/socket";
 import { setNotifications, addNotification } from "../utils/notificationSlice";
 import { addRequests, addSingleRequest } from "../utils/requestSlice";
+import { addConnections, addSingleConnection } from "../utils/connectionSlice";
 import { updateRoomOnNewMessage, setTotalUnreadCount } from "../utils/chatSlice";
 
 const Body = () => {
@@ -69,23 +70,52 @@ const Body = () => {
 
     const socket = getSocket(userData._id);
 
-    // Fetch initial notifications, requests, and unread messages count
+    // Fetch initial notifications, requests, connections, and unread messages count
     const loadInitialData = async () => {
       try {
-        const [notifsRes, requestsRes, chatUnreadRes] = await Promise.all([
-          axios.get(`${BASE_URL}/notifications`, { withCredentials: true }),
-          axios.get(`${BASE_URL}/user/requests/received`, { withCredentials: true }),
-          axios.get(`${BASE_URL}/chat/unread-count`, { withCredentials: true }).catch(() => ({ data: { data: { unreadCount: 0 } } })),
-        ]);
+        const [notifsRes, requestsRes, connRes, chatUnreadRes] =
+          await Promise.allSettled([
+            axios.get(`${BASE_URL}/notifications`, { withCredentials: true }),
+            axios.get(`${BASE_URL}/user/requests/received`, {
+              withCredentials: true,
+            }),
+            axios.get(`${BASE_URL}/user/connection`, {
+              withCredentials: true,
+            }),
+            axios
+              .get(`${BASE_URL}/chat/unread-count`, {
+                withCredentials: true,
+              })
+              .catch(() => ({ data: { data: { unreadCount: 0 } } })),
+          ]);
 
-        if (notifsRes.data?.data) {
-          dispatch(setNotifications(notifsRes.data.data));
+        if (notifsRes.status === "fulfilled" && notifsRes.value.data?.data) {
+          dispatch(setNotifications(notifsRes.value.data.data));
         }
-        if (requestsRes.data?.data) {
-          dispatch(addRequests(requestsRes.data.data));
+        if (requestsRes.status === "fulfilled" && requestsRes.value.data?.data) {
+          dispatch(addRequests(requestsRes.value.data.data));
         }
-        if (chatUnreadRes.data?.data?.unreadCount !== undefined) {
-          dispatch(setTotalUnreadCount(chatUnreadRes.data.data.unreadCount));
+        if (connRes.status === "fulfilled" && connRes.value.data?.data) {
+          dispatch(addConnections(connRes.value.data.data));
+        } else {
+          // Fallback to /user/connections
+          try {
+            const fallbackConn = await axios.get(
+              `${BASE_URL}/user/connections`,
+              { withCredentials: true }
+            );
+            if (fallbackConn.data?.data) {
+              dispatch(addConnections(fallbackConn.data.data));
+            }
+          } catch (e) {}
+        }
+        if (
+          chatUnreadRes.status === "fulfilled" &&
+          chatUnreadRes.value.data?.data?.unreadCount !== undefined
+        ) {
+          dispatch(
+            setTotalUnreadCount(chatUnreadRes.value.data.data.unreadCount)
+          );
         }
       } catch (e) {
         console.error("Initial data load error:", e);
@@ -116,6 +146,9 @@ const Body = () => {
     const handleConnectionAccepted = (payload) => {
       if (payload.notification) {
         dispatch(addNotification(payload.notification));
+      }
+      if (payload.byUser) {
+        dispatch(addSingleConnection(payload.byUser));
       }
       setActiveToast({
         type: "connection_accepted",

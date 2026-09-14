@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { useOutletContext } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
@@ -21,39 +21,119 @@ import {
   FaHeart,
 } from "react-icons/fa6";
 import { BASE_URL } from "../utils/constants";
+import { addConnections } from "../utils/connectionSlice";
+import { addRequests } from "../utils/requestSlice";
 import EditProfile from "./EditProfile";
 
 const Profile = () => {
   const user = useSelector((store) => store.user);
+  const connectionsFromStore = useSelector((store) => store.connections);
+  const requestsFromStore = useSelector((store) => store.requests);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isDarkMode, onOpenUpgrade } = useOutletContext();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const [stats, setStats] = useState({
-    connections: 0,
-    requests: 0,
+    connections: Array.isArray(connectionsFromStore)
+      ? connectionsFromStore.length
+      : 0,
+    requests: Array.isArray(requestsFromStore) ? requestsFromStore.length : 0,
     sentRequests: 0,
-    dailySwipesLeft: 25,
+    dailySwipesLeft: user?.dailySwipesLeft ?? 25,
   });
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchStatsAndCounts = async () => {
       try {
-        const res = await axios.get(`${BASE_URL}/user/stats`, {
-          withCredentials: true,
-        });
-        if (res.data?.data) {
-          setStats(res.data.data);
+        const [statsRes, connRes, reqRes] = await Promise.allSettled([
+          axios.get(`${BASE_URL}/user/stats`, { withCredentials: true }),
+          axios.get(`${BASE_URL}/user/connection`, { withCredentials: true }),
+          axios.get(`${BASE_URL}/user/requests/received`, {
+            withCredentials: true,
+          }),
+        ]);
+
+        let connCount = Array.isArray(connectionsFromStore)
+          ? connectionsFromStore.length
+          : 0;
+        let reqCount = Array.isArray(requestsFromStore)
+          ? requestsFromStore.length
+          : 0;
+        let sentRequestsCount = 0;
+        let dailySwipes = user?.dailySwipesLeft ?? 25;
+
+        // 1. If /user/stats succeeds, read from it
+        if (statsRes.status === "fulfilled" && statsRes.value.data?.data) {
+          const s = statsRes.value.data.data;
+          if (s.connections !== undefined) connCount = s.connections;
+          if (s.requests !== undefined) reqCount = s.requests;
+          if (s.sentRequests !== undefined) sentRequestsCount = s.sentRequests;
+          if (s.dailySwipesLeft !== undefined) dailySwipes = s.dailySwipesLeft;
         }
+
+        // 2. Guaranteed fallback for connections from /user/connection
+        if (connRes.status === "fulfilled" && connRes.value.data?.data) {
+          const conns = Array.isArray(connRes.value.data.data)
+            ? connRes.value.data.data
+            : [];
+          dispatch(addConnections(conns));
+          connCount = conns.length;
+        } else {
+          try {
+            const fallbackConn = await axios.get(
+              `${BASE_URL}/user/connections`,
+              { withCredentials: true }
+            );
+            if (fallbackConn.data?.data) {
+              const conns = Array.isArray(fallbackConn.data.data)
+                ? fallbackConn.data.data
+                : [];
+              dispatch(addConnections(conns));
+              connCount = conns.length;
+            }
+          } catch (e) {}
+        }
+
+        // 3. Guaranteed fallback for requests from /user/requests/received
+        if (reqRes.status === "fulfilled" && reqRes.value.data?.data) {
+          const reqs = Array.isArray(reqRes.value.data.data)
+            ? reqRes.value.data.data
+            : [];
+          dispatch(addRequests(reqs));
+          reqCount = reqs.length;
+        } else {
+          try {
+            const fallbackReq = await axios.get(`${BASE_URL}/user/requests`, {
+              withCredentials: true,
+            });
+            if (fallbackReq.data?.data) {
+              const reqs = Array.isArray(fallbackReq.data.data)
+                ? fallbackReq.data.data
+                : [];
+              dispatch(addRequests(reqs));
+              reqCount = reqs.length;
+            }
+          } catch (e) {}
+        }
+
+        setStats({
+          connections: connCount,
+          requests: reqCount,
+          sentRequests: sentRequestsCount,
+          dailySwipesLeft: dailySwipes,
+        });
       } catch (err) {
-        console.error("Error fetching user stats:", err);
+        console.error("Error updating profile stats:", err);
       }
     };
+
     if (user) {
-      fetchStats();
+      fetchStatsAndCounts();
     }
-  }, [user]);
+  }, [user, dispatch]);
 
   const handleModalClose = (wasUpdated) => {
     setIsEditModalOpen(false);
@@ -280,17 +360,23 @@ const Profile = () => {
         {[
           {
             label: "Connections",
-            value: stats.connections,
+            value: Array.isArray(connectionsFromStore)
+              ? connectionsFromStore.length
+              : stats.connections,
             icon: <FaHandshake className="text-cyan-400 text-xl" />,
             color: "text-cyan-400",
             bg: "bg-cyan-500/10 border-cyan-500/20",
+            onClick: () => navigate("/connections"),
           },
           {
             label: "Received Requests",
-            value: stats.requests,
+            value: Array.isArray(requestsFromStore)
+              ? requestsFromStore.length
+              : stats.requests,
             icon: <FaEnvelopeOpenText className="text-purple-400 text-xl" />,
             color: "text-purple-400",
             bg: "bg-purple-500/10 border-purple-500/20",
+            onClick: () => navigate("/requests"),
           },
           {
             label: "Sent Interests",
@@ -301,27 +387,40 @@ const Profile = () => {
           },
           {
             label: "Daily Swipes",
-            value: user.premiumTier === "gold" ? "Unlimited" : stats.dailySwipesLeft,
+            value:
+              user.premiumTier === "gold"
+                ? "Unlimited"
+                : user?.dailySwipesLeft ?? stats.dailySwipesLeft ?? 25,
             icon: <FaBolt className="text-emerald-400 text-xl" />,
             color: "text-emerald-400",
             bg: "bg-emerald-500/10 border-emerald-500/20",
+            onClick: () => navigate("/feed"),
           },
         ].map((item, index) => (
           <motion.div
             key={index}
-            whileHover={{ y: -3 }}
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={item.onClick}
             className={`p-5 rounded-2xl border backdrop-blur-xl shadow-lg transition-all ${
+              item.onClick ? "cursor-pointer" : ""
+            } ${
               isDarkMode
-                ? "bg-[#0d121f]/90 border-slate-800/80"
-                : "bg-white border-slate-200"
+                ? "bg-[#0d121f]/90 border-slate-800/80 hover:border-cyan-500/40 hover:shadow-cyan-500/10"
+                : "bg-white border-slate-200 hover:border-indigo-500/40 hover:shadow-indigo-500/10"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className={`p-2.5 rounded-xl border ${item.bg}`}>
                 {item.icon}
               </span>
+              {item.onClick && (
+                <span className="text-[10px] font-bold text-slate-400 hover:text-cyan-400 transition">
+                  View →
+                </span>
+              )}
             </div>
-            <h3 className={`text-2xl font-black mt-3 ${item.color}`}>
+            <h3 className={`text-2xl sm:text-3xl font-black mt-3 ${item.color}`}>
               {item.value}
             </h3>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">

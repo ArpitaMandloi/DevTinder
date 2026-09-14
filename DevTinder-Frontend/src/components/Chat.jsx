@@ -63,33 +63,84 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // 1. Fetch conversations (rooms) with lastMessage & unread count
+  // 1. Fetch conversations (rooms) and all accepted connections
   const fetchChatRooms = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/chat/rooms`, {
-        withCredentials: true,
+      const [roomsRes, connRes] = await Promise.allSettled([
+        axios.get(`${BASE_URL}/chat/rooms`, { withCredentials: true }),
+        axios.get(`${BASE_URL}/user/connection`, { withCredentials: true }),
+      ]);
+
+      let roomList = [];
+      if (roomsRes.status === "fulfilled" && roomsRes.value.data?.data) {
+        roomList = Array.isArray(roomsRes.value.data.data)
+          ? [...roomsRes.value.data.data]
+          : [];
+      }
+
+      let connList = [];
+      if (connRes.status === "fulfilled" && connRes.value.data?.data) {
+        connList = Array.isArray(connRes.value.data.data)
+          ? connRes.value.data.data
+          : [];
+      } else {
+        // Fallback endpoint /user/connections
+        try {
+          const fallbackConn = await axios.get(
+            `${BASE_URL}/user/connections`,
+            { withCredentials: true }
+          );
+          if (fallbackConn.data?.data) {
+            connList = Array.isArray(fallbackConn.data.data)
+              ? fallbackConn.data.data
+              : [];
+          }
+        } catch (e) {}
+      }
+
+      // Merge: For any connection that doesn't have an active room yet, add them so they can be chatted with
+      const existingUserIds = new Set(
+        roomList.map((r) => r.otherUser?._id?.toString()).filter(Boolean)
+      );
+
+      connList.forEach((conn) => {
+        if (conn && conn._id && !existingUserIds.has(conn._id.toString())) {
+          existingUserIds.add(conn._id.toString());
+          roomList.push({
+            _id: `temp_${conn._id}`,
+            otherUser: conn,
+            lastMessage: null,
+            unreadCount: 0,
+            updatedAt: conn.updatedAt || new Date().toISOString(),
+          });
+        }
       });
-      const roomData = res.data.data || [];
-      dispatch(setRooms(roomData));
+
+      dispatch(setRooms(roomList));
 
       // If targetUserId is in URL, select that user
       if (targetUserId) {
-        const selectedRoom = roomData.find(
+        const selectedRoom = roomList.find(
           (r) => r.otherUser?._id === targetUserId
         );
         if (selectedRoom?.otherUser) {
           setActiveUser(selectedRoom.otherUser);
-          setActiveRoomId(selectedRoom._id);
+          if (selectedRoom._id && !selectedRoom._id.startsWith("temp_")) {
+            setActiveRoomId(selectedRoom._id);
+          }
+        } else {
+          const foundConn = connList.find((c) => c._id === targetUserId);
+          if (foundConn) setActiveUser(foundConn);
         }
       }
     } catch (err) {
-      console.error("Error fetching chat rooms:", err);
+      console.error("Error fetching chat rooms & connections:", err);
     }
   };
 
   useEffect(() => {
     fetchChatRooms();
-  }, [currentUser?._id]);
+  }, [currentUser?._id, targetUserId]);
 
   // 2. Initialize Socket.io connection and listeners
   useEffect(() => {
@@ -171,9 +222,19 @@ const Chat = () => {
           withCredentials: true,
         });
 
-        const { roomId, messages: fetchedMsgs } = res.data.data;
+        const { roomId, messages: fetchedMsgs, targetUser: returnedTargetUser } =
+          res.data.data || {};
         setActiveRoomId(roomId);
         dispatch(setMessages(fetchedMsgs || []));
+
+        if (returnedTargetUser) {
+          setActiveUser(returnedTargetUser);
+        } else if (!activeUser) {
+          const found = rooms.find((r) => r.otherUser?._id === targetUserId);
+          if (found?.otherUser) {
+            setActiveUser(found.otherUser);
+          }
+        }
 
         // Mark as read in Redux immediately so badge vanishes
         dispatch(markRoomAsRead(targetUserId));
@@ -234,7 +295,7 @@ const Chat = () => {
     setInputText("");
 
     const socket = getSocket();
-    if (socket && activeRoomId) {
+    if (socket && activeRoomId && !activeRoomId.toString().startsWith("temp_")) {
       socket.emit("stop_typing", {
         roomId: activeRoomId,
         userId: currentUser._id,
@@ -264,7 +325,7 @@ const Chat = () => {
         })
       );
     } else {
-      // REST Fallback
+      // REST Fallback (creates chat room automatically)
       try {
         const res = await axios.post(
           `${BASE_URL}/chat/${targetUserId}`,
@@ -272,6 +333,12 @@ const Chat = () => {
           { withCredentials: true }
         );
         const msg = res.data.data;
+        if (msg.chatRoomId) {
+          setActiveRoomId(msg.chatRoomId);
+          if (socket) {
+            socket.emit("join_room", msg.chatRoomId);
+          }
+        }
         dispatch(addMessage(msg));
         dispatch(
           updateRoomOnNewMessage({
@@ -291,19 +358,25 @@ const Chat = () => {
     if (!user) return;
 
     setActiveUser(user);
-    setActiveRoomId(room._id);
+    if (room._id && !room._id.toString().startsWith("temp_")) {
+      setActiveRoomId(room._id);
+    } else {
+      setActiveRoomId(null);
+    }
 
     // Clear unread badge immediately
     dispatch(markRoomAsRead(user._id));
 
     // Backend mark read
-    axios
-      .patch(
-        `${BASE_URL}/chat/mark-read/${room._id}`,
-        {},
-        { withCredentials: true }
-      )
-      .catch(() => {});
+    if (room._id && !room._id.toString().startsWith("temp_")) {
+      axios
+        .patch(
+          `${BASE_URL}/chat/mark-read/${room._id}`,
+          {},
+          { withCredentials: true }
+        )
+        .catch(() => {});
+    }
 
     navigate(`/chat/${user._id}`);
   };
@@ -371,10 +444,21 @@ const Chat = () => {
           {/* WhatsApp-Style Conversations List */}
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {filteredRooms.length === 0 ? (
-              <div className="text-center py-12 text-sm text-slate-500">
-                {searchTerm
-                  ? "No conversations match your search."
-                  : "No conversations yet. Connect on Feed to chat!"}
+              <div className="text-center py-12 px-4 text-sm text-slate-500">
+                <div className="text-4xl mb-3">🤝</div>
+                <p className={`font-semibold ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                  {searchTerm
+                    ? "No conversations match your search."
+                    : "No connections yet to chat with."}
+                </p>
+                {!searchTerm && (
+                  <button
+                    onClick={() => navigate("/feed")}
+                    className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-black hover:bg-cyan-400 transition shadow-md"
+                  >
+                    Find Developers on Feed →
+                  </button>
+                )}
               </div>
             ) : (
               filteredRooms.map((room) => {

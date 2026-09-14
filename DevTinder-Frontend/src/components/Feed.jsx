@@ -36,6 +36,7 @@ const Feed = () => {
 
   const [selectedTech, setSelectedTech] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState(null); // { message: string, type: 'like' | 'nope' }
 
@@ -46,14 +47,22 @@ const Feed = () => {
     }, 2200);
   };
 
-  const getFeed = useCallback(
-    async (tech = selectedTech, search = searchQuery) => {
+  // Debounce search query changes by 350ms to prevent spamming backend while typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const fetchFeedFromBackend = useCallback(
+    async (tech = selectedTech, search = debouncedSearch) => {
       try {
         setIsLoading(true);
         const params = new URLSearchParams();
         if (tech && tech !== "All") params.append("skill", tech);
         if (search && search.trim()) params.append("search", search.trim());
-        params.append("limit", "30");
+        params.append("limit", "50");
 
         const res = await axios.get(`${BASE_URL}/feed?${params.toString()}`, {
           withCredentials: true,
@@ -67,22 +76,62 @@ const Feed = () => {
         setIsLoading(false);
       }
     },
-    [selectedTech, searchQuery, dispatch]
+    [selectedTech, debouncedSearch, dispatch]
   );
 
   useEffect(() => {
-    getFeed();
-  }, [getFeed]);
+    fetchFeedFromBackend(selectedTech, debouncedSearch);
+  }, [selectedTech, debouncedSearch, fetchFeedFromBackend]);
 
   const handleTechClick = (tech) => {
     setSelectedTech(tech);
-    getFeed(tech, searchQuery);
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    getFeed(selectedTech, searchQuery);
+    fetchFeedFromBackend(selectedTech, searchQuery);
   };
+
+  // Dual-layer client-side filtering: provides INSTANT search and filter results even before backend responds
+  const displayedFeed = (feed || []).filter((user) => {
+    if (!user) return false;
+
+    // 1. Skill / Tech Pill filter
+    if (selectedTech && selectedTech !== "All") {
+      const techLower = selectedTech.toLowerCase();
+      const hasSkill =
+        Array.isArray(user.skills) &&
+        user.skills.some((s) => s?.toLowerCase().includes(techLower));
+      const hasHeadline =
+        user.headline && user.headline.toLowerCase().includes(techLower);
+      const hasAbout =
+        user.about && user.about.toLowerCase().includes(techLower);
+      if (!hasSkill && !hasHeadline && !hasAbout) return false;
+    }
+
+    // 2. Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const fullName =
+        `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
+      const headline = (user.headline || "").toLowerCase();
+      const about = (user.about || "").toLowerCase();
+      const skillsMatch =
+        Array.isArray(user.skills) &&
+        user.skills.some((s) => s?.toLowerCase().includes(q));
+
+      if (
+        !fullName.includes(q) &&
+        !headline.includes(q) &&
+        !about.includes(q) &&
+        !skillsMatch
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   return (
     <div className="relative z-10 min-h-[85vh] flex flex-col items-center px-4 py-4 overflow-hidden">
@@ -150,7 +199,9 @@ const Feed = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => getFeed(selectedTech, searchQuery)}
+              onClick={() =>
+                fetchFeedFromBackend(selectedTech, debouncedSearch)
+              }
               className={`p-2 rounded-xl border text-xs transition-all ${
                 isDarkMode
                   ? "border-slate-700 bg-slate-900/60 text-slate-300 hover:text-white hover:bg-slate-800"
@@ -174,7 +225,8 @@ const Feed = () => {
         </div>
 
         {/* Modern Search Command Bar */}
-        <div
+        <form
+          onSubmit={handleSearchSubmit}
           className={`relative w-full rounded-2xl border transition-all duration-300 flex items-center px-4 py-2.5 shadow-md backdrop-blur-xl ${
             isDarkMode
               ? "bg-[#0d121f]/90 border-slate-800 focus-within:border-cyan-500/60 focus-within:shadow-[0_0_20px_rgba(34,211,238,0.15)] text-white"
@@ -195,6 +247,7 @@ const Feed = () => {
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery("")}
               className="p-1 rounded-full text-slate-400 hover:text-white transition shrink-0"
               title="Clear search"
@@ -202,7 +255,7 @@ const Feed = () => {
               <FaXmark className="text-xs" />
             </button>
           )}
-        </div>
+        </form>
 
         {/* Tech Stack Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -238,7 +291,6 @@ const Feed = () => {
               onClick={() => {
                 setSelectedTech("All");
                 setSearchQuery("");
-                getFeed("All", "");
               }}
               className="text-cyan-400 hover:underline font-semibold"
             >
@@ -249,14 +301,14 @@ const Feed = () => {
       </div>
 
       {/* ================= MAIN FEED / CARD STACK ================= */}
-      {isLoading ? (
+      {isLoading && (!feed || feed.length === 0) ? (
         <div className="flex flex-col items-center justify-center min-h-[52vh] gap-3">
           <span className="loading loading-spinner text-cyan-500 loading-lg"></span>
           <p className="text-xs text-slate-400 font-semibold tracking-wider">
             Fetching Talented Developers...
           </p>
         </div>
-      ) : !feed || feed.length === 0 ? (
+      ) : displayedFeed.length === 0 ? (
         /* Empty State */
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -267,20 +319,26 @@ const Feed = () => {
               : "bg-white/80 border-slate-200"
           }`}
         >
-          <div className="text-6xl mb-4 animate-bounce">🏁</div>
+          <div className="text-6xl mb-4">
+            {selectedTech !== "All" || searchQuery ? "🔍" : "🏁"}
+          </div>
           <h2
             className={`text-2xl sm:text-3xl font-black mb-2 ${
               isDarkMode ? "text-white" : "text-slate-900"
             }`}
           >
-            All Caught <span className="text-cyan-500">Up!</span>
+            {selectedTech !== "All" || searchQuery
+              ? "No Developers Found"
+              : "All Caught Up!"}
           </h2>
           <p
             className={`text-sm leading-relaxed mb-6 ${
               isDarkMode ? "text-slate-400" : "text-slate-600"
             }`}
           >
-            {selectedTech !== "All"
+            {searchQuery
+              ? `No developer profiles found matching "${searchQuery}".`
+              : selectedTech !== "All"
               ? `No developers found with the "${selectedTech}" skill filter.`
               : "You've browsed through all active developer profiles! Tap below to reload fresh profiles."}
           </p>
@@ -289,7 +347,6 @@ const Feed = () => {
             onClick={() => {
               setSelectedTech("All");
               setSearchQuery("");
-              getFeed("All", "");
             }}
             className="px-8 py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-black hover:from-cyan-400 hover:to-blue-400 transition shadow-lg shadow-cyan-500/30 flex items-center gap-2"
           >
@@ -299,7 +356,7 @@ const Feed = () => {
       ) : (
         /* The Card Stack Container with 3D Depth */
         <div className="relative w-full max-w-[380px] h-[610px] flex justify-center mt-1 z-20">
-          {feed
+          {displayedFeed
             .slice(0, 3)
             .reverse()
             .map((user, index, array) => {

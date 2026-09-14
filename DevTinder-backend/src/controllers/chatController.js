@@ -1,6 +1,7 @@
 const ChatRoom = require("../models/chatRoom");
 const Message = require("../models/message");
 const ConnectionRequest = require("../models/connectionRequest");
+const User = require("../models/user");
 const ApiResponse = require("../utils/apiResponse");
 const ApiError = require("../utils/apiError");
 const asyncHandler = require("../utils/asyncHandler");
@@ -172,12 +173,17 @@ const getChatHistory = asyncHandler(async (req, res) => {
     { $set: { read: true } }
   );
 
+  const targetUser = await User.findById(targetUserId).select(
+    "firstName lastName photoUrl headline isVerified"
+  );
+
   return res.status(200).json(
     new ApiResponse(
       200,
       {
         roomId: room._id,
         messages,
+        targetUser,
       },
       "Chat history fetched successfully."
     )

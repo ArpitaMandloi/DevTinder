@@ -1,0 +1,11 @@
+﻿{
+  "name": "devtinder-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DevTinder Full Stack MERN Application",
+  "scripts": {
+    "build": "cd DevTinder-backend && npm install",
+    "start": "cd DevTinder-backend && npm start",
+    "postinstall": "cd DevTinder-backend && npm install"
+  }
+}
